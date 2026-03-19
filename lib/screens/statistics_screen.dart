@@ -30,14 +30,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
     return Scaffold(
       appBar: AppBar(
         title: const Text('Thống kê chi tiết'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.category_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const CategoryManagementScreen()),
-            ),
-          )
-        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

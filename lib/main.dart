@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'screens/dashboard_screen.dart';
+import 'screens/main_shell.dart';
 import 'services/expense_service.dart';
 
 void main() async {
@@ -22,7 +22,7 @@ class ExpenseTrackerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Quản lý Tài chính',
+      title: 'Expense Tracker - G15_C3',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
@@ -32,7 +32,7 @@ class ExpenseTrackerApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      home: const DashboardScreen(),
+      home: const MainShell(),
     );
   }
 }
