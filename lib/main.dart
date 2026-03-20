@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/main_shell.dart';
 import 'services/expense_service.dart';
+import 'screens/transaction_list_screen.dart'; // Import màn hình mới
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +33,7 @@ class ExpenseTrackerApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      home: const MainShell(),
+      home: const TransactionListScreen(), // Đổi tạm để test màn hình danh sách
     );
   }
 }
