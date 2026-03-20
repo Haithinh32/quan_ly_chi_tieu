@@ -196,10 +196,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           ),
         ),
         title: Text(
-          tx.note, // Dùng note làm tiêu đề chính
+          tx.note,
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
-        subtitle: Text(tx.categoryId), // Hiển thị tạm ID danh mục
+        subtitle: Text(tx.categoryId),
         trailing: Text(
           '$amountPrefix${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(tx.amount)}',
           style: TextStyle(
