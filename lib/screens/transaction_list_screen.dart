@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../services/expense_service.dart';
-import '../models/transaction_model.dart';
+import '../models/transaction.dart';
+import '../models/category.dart';
 
 class TransactionListScreen extends StatefulWidget {
   const TransactionListScreen({super.key});
@@ -22,8 +23,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   }
 
   // Hàm nhóm các giao dịch theo ngày
-  Map<String, List<TransactionModel>> _groupTransactionsByDate(List<TransactionModel> transactions) {
-    Map<String, List<TransactionModel>> groups = {};
+  Map<String, List<Transaction>> _groupTransactionsByDate(List<Transaction> transactions) {
+    Map<String, List<Transaction>> groups = {};
     for (var tx in transactions) {
       // Format ngày thành chuỗi để làm key (Ví dụ: "20/10/2023")
       String dateKey = DateFormat('dd/MM/yyyy').format(tx.date);
@@ -89,11 +90,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                   itemCount: sortedKeys.length,
                   itemBuilder: (context, index) {
                     String dateKey = sortedKeys[index];
-                    List<TransactionModel> transactionsOfDay = groupedTransactions[dateKey]!;
+                    List<Transaction> transactionsOfDay = groupedTransactions[dateKey]!;
                     
                     // Tính tổng tiền trong ngày (Optional UI)
                     double totalDay = transactionsOfDay.fold(0, (sum, item) {
-                      return item.type == TransactionType.income 
+                      return item.type == CategoryType.income 
                           ? sum + item.amount 
                           : sum - item.amount;
                     });
@@ -133,8 +134,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  Widget _buildTransactionItem(BuildContext context, TransactionModel tx, ExpenseService service) {
-    final isIncome = tx.type == TransactionType.income;
+  Widget _buildTransactionItem(BuildContext context, Transaction tx, ExpenseService service) {
+    final isIncome = tx.type == CategoryType.income;
     final color = isIncome ? Colors.green : Colors.red;
     final amountPrefix = isIncome ? '+' : '-';
 
@@ -159,7 +160,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           // Hướng StartToEnd (Trái sang phải) -> Sửa
           // TODO: Điều hướng đến màn hình chỉnh sửa tại đây
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Chức năng sửa giao dịch '${tx.title}'")),
+            SnackBar(content: Text("Chức năng sửa giao dịch '${tx.note}'")),
           );
           return false; // Trả về false để không xóa item khỏi list
         } else {
@@ -175,7 +176,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           // Hiển thị Undo SnackBar
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Đã xóa '${tx.title}'"),
+              content: Text("Đã xóa '${tx.note}'"),
               action: SnackBarAction(
                 label: 'HOÀN TÁC',
                 onPressed: () {
@@ -195,10 +196,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           ),
         ),
         title: Text(
-          tx.title,
+          tx.note, // Dùng note làm tiêu đề chính
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
-        subtitle: Text(tx.category),
+        subtitle: Text(tx.categoryId), // Hiển thị tạm ID danh mục
         trailing: Text(
           '$amountPrefix${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(tx.amount)}',
           style: TextStyle(
