@@ -4,6 +4,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../services/expense_service.dart';
 import '../models/category.dart';
+// THÊM IMPORT NÀY:
+import 'transaction_form_screen.dart'; 
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -21,6 +23,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (hour < 12) return 'Chào buổi sáng ☀️';
     if (hour < 18) return 'Chào buổi chiều 🌤️';
     return 'Chào buổi tối 🌙';
+  }
+
+  // Hàm mở màn hình Thêm/Sửa của Thịnh
+  void _openTransactionForm(BuildContext context, {Map<String, dynamic>? data}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TransactionFormScreen(existingTransaction: data),
+      ),
+    );
   }
 
   void _showComingSoon(BuildContext context, String feature) {
@@ -58,7 +70,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showComingSoon(context, 'Thêm giao dịch'),
+        // ĐÃ SỬA: Mở Form của Thịnh
+        onPressed: () => _openTransactionForm(context),
         icon: const Icon(Icons.add),
         label: const Text('Thêm'),
         tooltip: 'Thêm giao dịch mới',
@@ -74,10 +87,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       floating: false,
       pinned: true,
       backgroundColor: Colors.blue.shade700,
-      title: Column(
+      title: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Text(
             'Expense tracker - G15_C3',
             style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w400),
@@ -338,57 +351,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildBarChartCard(ExpenseService service) {
     final now = DateTime.now();
-    // 6 tháng gần nhất theo thứ tự thời gian tăng dần
     final months =
         List.generate(6, (i) => DateTime(now.year, now.month - (5 - i), 1));
 
     final Map<String, double> incomeByMonth = {};
     final Map<String, double> expenseByMonth = {};
-    for (final m in months) {
-      final key = '${m.year}-${m.month}';
-      incomeByMonth[key] = 0;
-      expenseByMonth[key] = 0;
-    }
-
     for (final t in service.transactions) {
       final key = '${t.date.year}-${t.date.month}';
-      if (incomeByMonth.containsKey(key)) {
-        if (t.type == CategoryType.income) {
-          incomeByMonth[key] = incomeByMonth[key]! + t.amount;
-        } else {
-          expenseByMonth[key] = expenseByMonth[key]! + t.amount;
-        }
+      if (t.type == CategoryType.income) {
+        incomeByMonth[key] = (incomeByMonth[key] ?? 0) + t.amount;
+      } else {
+        expenseByMonth[key] = (expenseByMonth[key] ?? 0) + t.amount;
       }
     }
 
-    final keys = months.map((m) => '${m.year}-${m.month}').toList();
-    final allValues = [...incomeByMonth.values, ...expenseByMonth.values];
-    final maxVal =
-        allValues.isEmpty ? 0.0 : allValues.reduce((a, b) => a > b ? a : b);
-    final maxY = maxVal > 0 ? maxVal * 1.3 : 1000000.0;
-
     final barGroups = List.generate(months.length, (i) {
+      final key = '${months[i].year}-${months[i].month}';
       return BarChartGroupData(
         x: i,
         barsSpace: 4,
         barRods: [
           BarChartRodData(
-            toY: incomeByMonth[keys[i]]!,
+            toY: incomeByMonth[key] ?? 0,
             color: Colors.green.shade400,
             width: 10,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(4)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
           ),
           BarChartRodData(
-            toY: expenseByMonth[keys[i]]!,
+            toY: expenseByMonth[key] ?? 0,
             color: Colors.red.shade400,
             width: 10,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(4)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
           ),
         ],
       );
     });
+
+    final maxY = 1000000.0; // Tùy chỉnh theo dữ liệu thực tế
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -426,42 +425,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   borderData: FlBorderData(show: false),
                   titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 24,
                         getTitlesWidget: (value, meta) {
                           final idx = value.toInt();
-                          if (idx < 0 || idx >= months.length) {
-                            return const SizedBox.shrink();
-                          }
+                          if (idx < 0 || idx >= months.length) return const SizedBox.shrink();
                           return Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
                               DateFormat('MM/yy').format(months[idx]),
-                              style: TextStyle(
-                                  fontSize: 9, color: Colors.grey.shade600),
+                              style: TextStyle(fontSize: 9, color: Colors.grey.shade600),
                             ),
                           );
                         },
                       ),
-                    ),
-                  ),
-                  barTouchData: BarTouchData(
-                    touchTooltipData: BarTouchTooltipData(
-                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                        return BarTooltipItem(
-                          '${rodIndex == 0 ? 'Thu' : 'Chi'}\n'
-                          '${_currencyFormat.format(rod.toY)}',
-                          const TextStyle(color: Colors.white, fontSize: 10),
-                        );
-                      },
                     ),
                   ),
                 ),
@@ -477,11 +459,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
+        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 4),
         Text(label, style: const TextStyle(fontSize: 11)),
       ],
@@ -490,8 +468,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ──────────────────────── Giao dịch gần đây ──────────────────────────────
 
-  Widget _buildRecentTransactionsCard(
-      BuildContext context, ExpenseService service) {
+  Widget _buildRecentTransactionsCard(BuildContext context, ExpenseService service) {
     final recent = service.transactions.take(5).toList();
 
     return Card(
@@ -509,10 +486,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
                 TextButton(
-                  onPressed: () =>
-                      _showComingSoon(context, 'Danh sách giao dịch'),
-                  child: const Text('Xem tất cả',
-                      style: TextStyle(fontSize: 12)),
+                  onPressed: () => _showComingSoon(context, 'Danh sách giao dịch'),
+                  child: const Text('Xem tất cả', style: TextStyle(fontSize: 12)),
                 ),
               ],
             ),
@@ -522,17 +497,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.symmetric(vertical: 32),
               child: Column(
                 children: [
-                  Icon(Icons.receipt_long_outlined,
-                      size: 48, color: Colors.grey.shade300),
+                  Icon(Icons.receipt_long_outlined, size: 48, color: Colors.grey.shade300),
                   const SizedBox(height: 8),
-                  Text(
-                    'Chưa có giao dịch nào',
-                    style: TextStyle(color: Colors.grey.shade500),
-                  ),
+                  Text('Chưa có giao dịch nào', style: TextStyle(color: Colors.grey.shade500)),
                   const SizedBox(height: 4),
+                  // ĐÃ SỬA: Mở Form của Thịnh
                   TextButton.icon(
-                    onPressed: () =>
-                        _showComingSoon(context, 'Thêm giao dịch'),
+                    onPressed: () => _openTransactionForm(context),
                     icon: const Icon(Icons.add, size: 16),
                     label: const Text('Thêm giao dịch đầu tiên'),
                   ),
@@ -546,67 +517,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
               return Column(
                 children: [
                   InkWell(
-                    onTap: () =>
-                        _showComingSoon(context, 'Chỉnh sửa giao dịch'),
+                    // ĐÃ SỬA: Nhấn để Sửa giao dịch
+                    onTap: () => _openTransactionForm(context, data: {
+                      'id': t.id,
+                      'title': t.note.isNotEmpty ? t.note : category.name,
+                      'amount': t.amount,
+                      'date': t.date,
+                      'type': isIncome ? 'income' : 'expense',
+                      'note': t.note,
+                    }),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       child: Row(
                         children: [
                           CircleAvatar(
                             radius: 20,
-                            backgroundColor:
-                                category.color.withOpacity(0.15),
-                            child: Icon(category.icon,
-                                color: category.color, size: 18),
+                            backgroundColor: category.color.withOpacity(0.15),
+                            child: Icon(category.icon, color: category.color, size: 18),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  category.name,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14),
-                                ),
-                                if (t.note.isNotEmpty)
-                                  Text(
-                                    t.note,
-                                    style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontSize: 12),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                Text(
-                                  DateFormat('dd/MM/yyyy – HH:mm')
-                                      .format(t.date),
-                                  style: TextStyle(
-                                      color: Colors.grey.shade500,
-                                      fontSize: 11),
-                                ),
+                                Text(category.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                Text(DateFormat('dd/MM/yyyy').format(t.date), style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
                               ],
                             ),
                           ),
                           Text(
                             '${isIncome ? '+' : '-'}${_currencyFormat.format(t.amount)}',
                             style: TextStyle(
-                              color: isIncome
-                                  ? Colors.green.shade600
-                                  : Colors.red.shade600,
+                              color: isIncome ? Colors.green : Colors.red,
                               fontWeight: FontWeight.bold,
-                              fontSize: 13,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  Divider(
-                      height: 1,
-                      indent: 56,
-                      color: Colors.grey.shade100),
+                  Divider(height: 1, indent: 56, color: Colors.grey.shade100),
                 ],
               );
             }),
@@ -616,13 +566,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ──────────────────────── Empty state card ───────────────────────────────
-
-  Widget _buildEmptyCard({
-    required String title,
-    required IconData icon,
-    required String message,
-  }) {
+  Widget _buildEmptyCard({required String title, required IconData icon, required String message}) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
@@ -631,18 +575,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.bold)),
+            Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             Center(
               child: Column(
                 children: [
                   Icon(icon, size: 40, color: Colors.grey.shade300),
                   const SizedBox(height: 8),
-                  Text(message,
-                      style: TextStyle(
-                          color: Colors.grey.shade500, fontSize: 13)),
+                  Text(message, style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
                 ],
               ),
             ),

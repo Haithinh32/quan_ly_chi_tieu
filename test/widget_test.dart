@@ -1,30 +1,25 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
-import 'package:quan_ly_chi_tieu/main.dart';
+// Dùng đường dẫn tương đối để máy tự tìm file mà không cần tên package
+import '../lib/main.dart';
+import '../lib/services/expense_service.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Kiểm tra ứng dụng có khởi chạy thành công hay không', (WidgetTester tester) async {
+    // 1. Khởi tạo service
+    final expenseService = ExpenseService();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // 2. Xây dựng ứng dụng trong môi trường test
+    await tester.pumpWidget(
+      ChangeNotifierProvider<ExpenseService>(
+        create: (context) => expenseService,
+        child: const ExpenseTrackerApp(),
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // 3. Kiểm tra xem ứng dụng có hiển thị đúng không
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }
