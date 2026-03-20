@@ -6,6 +6,7 @@ import '../services/expense_service.dart';
 import '../models/category.dart';
 // THÊM IMPORT NÀY:
 import 'transaction_form_screen.dart'; 
+import 'transaction_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -35,16 +36,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text('$feature sắp ra mắt'),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+  // Hàm mở màn hình danh sách giao dịch
+  void _openTransactionList(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TransactionListScreen()),
+    );
   }
 
   @override
@@ -87,6 +84,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       floating: false,
       pinned: true,
       backgroundColor: Colors.blue.shade700,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.history, color: Colors.white),
+          tooltip: 'Lịch sử giao dịch',
+          onPressed: () => _openTransactionList(context),
+        ),
+      ],
       title: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -486,7 +490,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
                 TextButton(
-                  onPressed: () => _showComingSoon(context, 'Danh sách giao dịch'),
+                  onPressed: () => _openTransactionList(context),
                   child: const Text('Xem tất cả', style: TextStyle(fontSize: 12)),
                 ),
               ],
