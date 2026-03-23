@@ -391,7 +391,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     });
 
-    final maxY = 1000000.0; // Tùy chỉnh theo dữ liệu thực tế
+    final allValues = [...incomeByMonth.values, ...expenseByMonth.values];
+    final maxY = allValues.isEmpty
+        ? 1000000.0
+        : allValues.reduce((a, b) => a > b ? a : b) * 1.3;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
