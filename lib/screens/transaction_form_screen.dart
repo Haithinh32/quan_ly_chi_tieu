@@ -23,6 +23,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   
   DateTime _selectedDate = DateTime.now();
   String _type = 'expense'; // 'expense' hoặc 'income'
+  String? _selectedCategoryId;
   bool _isLoading = false;
 
   @override
@@ -34,6 +35,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       _noteController.text = widget.existingTransaction!['note'] ?? '';
       _type = widget.existingTransaction!['type'] ?? 'expense';
       _selectedDate = widget.existingTransaction!['date'] ?? DateTime.now();
+      _selectedCategoryId = widget.existingTransaction!['categoryId'];
     }
   }
 
@@ -67,7 +69,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       // Tạo Object Transaction đúng chuẩn Model của nhóm bạn
       final transaction = Transaction(
         id: widget.existingTransaction?['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        categoryId: '1', // Tạm để ID '1' (Ăn uống) cho đến khi tích hợp nốt phần 4
+        categoryId: _selectedCategoryId ?? '1',
         amount: double.parse(_amountController.text),
         note: _noteController.text, // Nhóm dùng trường note làm nội dung hiển thị
         date: _selectedDate,
@@ -152,7 +154,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 4. Chọn ngày
+                  // 4. Chọn danh mục
+                  _buildCategorySelector(themeColor),
+                  const SizedBox(height: 20),
+
+                  // 5. Chọn ngày
                   InkWell(
                     onTap: _presentDatePicker,
                     child: InputDecorator(
@@ -188,6 +194,54 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     );
   }
 
+  Widget _buildCategorySelector(Color themeColor) {
+    final expenseService = Provider.of<ExpenseService>(context);
+    final currentType = _type == 'expense' ? CategoryType.expense : CategoryType.income;
+    final filtered = expenseService.categories
+        .where((c) => c.type == currentType)
+        .toList();
+
+    // Auto-select first if nothing selected or selection invalid for current type
+    if (_selectedCategoryId == null ||
+        !filtered.any((c) => c.id == _selectedCategoryId)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (filtered.isNotEmpty) {
+          setState(() => _selectedCategoryId = filtered.first.id);
+        }
+      });
+    }
+
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: 'Danh mục',
+        prefixIcon: const Icon(Icons.category),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: filtered.any((c) => c.id == _selectedCategoryId)
+              ? _selectedCategoryId
+              : (filtered.isNotEmpty ? filtered.first.id : null),
+          isExpanded: true,
+          isDense: true,
+          items: filtered.map((cat) {
+            return DropdownMenuItem<String>(
+              value: cat.id,
+              child: Row(
+                children: [
+                  Icon(cat.icon, color: cat.color, size: 20),
+                  const SizedBox(width: 10),
+                  Text(cat.name),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (val) => setState(() => _selectedCategoryId = val),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTypeToggle(Color themeColor) {
     return Container(
       padding: const EdgeInsets.all(4),
@@ -205,7 +259,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     bool isSelected = _type == type;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _type = type),
+        onTap: () => setState(() {
+          _type = type;
+          _selectedCategoryId = null; // reset để tự chọn danh mục phù hợp
+        }),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
